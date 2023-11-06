@@ -61,7 +61,7 @@ for epoch in range(1000):
     print('epoch=', epoch, 'w=', w, 'cost=', loss_val)
 '''
 
-# 使用三个loss取平均(也就是loss)
+# 使用三个loss取平均(也就是cost)
 w = 1.0
 for epoch in range(50):
     nums = [0, 1, 2]
