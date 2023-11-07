@@ -16,6 +16,22 @@ train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=Fals
 test_dataset = datasets.MNIST(root='E:\PyTorch深度学习实践\dataset', train=False, download=False, transform=transform)
 test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
+
+# 为了防止网络退化/梯度消失 
+# 在梯度更新时引入ResidualBlock 在梯度更新是永远保留1+grad 防止梯度累乘过小 使得梯度消失
+# 方法是 Conv(ReLU(Conv(x))) +  x 
+#             主分支          残差分支
+# 主分支（Main Path）：包含一系列的卷积层，用于学习特征。
+# 残差分支（Shortcut Connection）：通常是一个恒等映射，直接将输入添加到了主分支的输出中。
+# grad =   ∂(Conv(ReLU(Conv(x))) +  x)/∂(x) 
+#      =  (∂(Conv(ReLU(Conv(x)))) +  ∂(x))/∂(x) 
+#      = ∂(Conv(ReLU(Conv(x))))/∂(x) +  ∂(x)/∂(x)
+#      = grad_origin + 1  
+# 因此 梯度不会消失
+
+# 对于ResidualBlock来说 主分支与残差分支(原输入)必须是相同维度
+# 所以对于主分支，必须保留原来的通道数与维度
+# 传入参数是in_channels 输出维度也是channels
 class ResidualBlock(torch.nn.Module):
     def __init__(self, in_channels, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -59,7 +75,7 @@ class Net(torch.nn.Module):
         #         32*4*4
         x = self.ResBlock_2(x)
         #         in_size, 512
-        x = x.view(in_size, -1)
+        x = x.view(in_size, -1)  # 线性输入层维度为512
         x = self.Linear1(x)
         x = self.Linear2(x)
         x = self.Linear3(x)
@@ -87,7 +103,7 @@ def train(epoch):
         
         running_loss += loss.item()
         if i%300 == 299:
-            print("{:d}{:5d} loss: {:.3f}".format(epoch+1, i+1, running_loss/300))
+            print("[epoch:{:d} {:5d}] loss: {:.3f}".format(epoch+1, i+1, running_loss/300))
             running_loss = 0.0
             
 def test_acc():
