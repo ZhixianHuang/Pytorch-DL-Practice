@@ -19,6 +19,20 @@ test_dataset = datasets.MNIST(root= 'E:\PyTorch深度学习实践\dataset', trai
 
 test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
+
+# 由于Kernel_size是一个超参数，于是引入了Inception模块
+# 在这个模块下 可以同时使用多个不同尺寸的卷积核 并进行信息融合 同时整合多个卷积核的信息
+# 但是会使得参数爆炸，所以采用了1*1卷积核减少参数
+# 由于1*1卷积核只用于减少通道数，(固定位置上的信息整合) 但是使用1*1卷积核不会改变H*W的尺寸
+# 所以对于池化分支、3*3卷积分支 和 5*5卷积分支需要保证输出规模相等
+# 所以对于3*3 卷积核 padding=1， 5*5卷积核 padding=2
+# 其他设计详见GoogLeNet网络设计
+# 池化分支:    3*3平均池化(池化不改变通道数) + 24层1*1卷积核 
+# 1*1卷积分支: 16层1*1卷积核 
+# 5*5卷积分支: 16层1*1卷积核 + 24层5*5卷积核
+# 3*3卷积分支: 16层1*1卷积核 + 24层3*3卷积核 + 24层3*3卷积核
+# 所有输出分别为 原尺寸的 24通道 + 16通道 + 24通道 + 24通道 = 88通道
+# 并对所用通道拼接
 class InceptionA(torch.nn.Module):
     def __init__(self, in_channels, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)    
@@ -65,13 +79,18 @@ class Net(torch.nn.Module):
         self.linear2 = torch.nn.Linear(256, 64)
         self.linear3 = torch.nn.Linear(64, 10) 
         
-    def forward(self, x):
+    def forward(self, x):  # 1*28*28 →
         batch_size = x.size(0)
+        #                             10*12*12  ←  10*24*24
         x = self.activation_ReLU(self.MaxPooL(self.conv1(x)))
+        #      → 88*12*12
         x = self.Incep1(x)
+        #                             20*4*4    ←  20*8*8
         x = self.activation_ReLU(self.MaxPooL(self.conv2(x)))
+        #      → 88*4*4  = 1048
         x = self.Incep2(x)
-        x = x.view(batch_size, -1)
+        x = x.view(batch_size, -1)  
+        #    =1408 (线性层输入为1408)
         x = self.linear1(x)
         x = self.linear2(x)
         x = self.linear3(x)
@@ -79,7 +98,7 @@ class Net(torch.nn.Module):
     
 model = Net()
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-print('Using Device: {device}')
+print(f'Using Device: {device}')
 model.to(device)
  
 criterion = torch.nn.CrossEntropyLoss()

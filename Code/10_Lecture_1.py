@@ -10,11 +10,11 @@ transform = transforms.Compose([
     transforms.Normalize((0.1307, ), (0.3081, ))
 ])
 
-train_dataset = datasets.MNIST(root= 'E:\PyTorch深度学习实践\dataset', train=True, download=False, transform=transform)
+train_dataset = datasets.MNIST(root='E:\PyTorch深度学习实践\dataset', train=True, download=False, transform=transform)
 
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
-test_dataset = datasets.MNIST(root= 'E:\PyTorch深度学习实践\dataset', train=False, download=False, transform=transform)
+test_dataset = datasets.MNIST(root='E:\PyTorch深度学习实践\dataset', train=False, download=False, transform=transform)
 
 test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
@@ -73,7 +73,7 @@ model = Net()
 
 # GPU需要将模型，数据全都传入GPU
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-print('Using Device: {device}')
+print(f'Using Device: {device}')
 # 将模型移动到GPU上
 model = model.to(device)
 

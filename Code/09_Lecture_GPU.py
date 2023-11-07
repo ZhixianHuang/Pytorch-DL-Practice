@@ -67,7 +67,8 @@ optimizer = torch.optim.SGD(model.parameters(), lr= 0.01, momentum=0.5)
 
 # 检查是否有可用的 GPU
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-print('Using device: {device}')
+# 在字符串的格式化中，需要使用 f 字符串（f-string）来正确地插入变量值
+print(f'Using device: {device}')
 
 # 将模型移动到 GPU 上
 model = model.to(device)
